@@ -1,4 +1,4 @@
-package com.gaoyong.concurrency.annoation;
+package com.gaoyong.concurrency.annoations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -7,5 +7,5 @@ import java.lang.annotation.Target;
 
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.SOURCE)
-public @interface Recommend {
+public @interface NotRecommend {
 }
