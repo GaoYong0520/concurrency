@@ -331,4 +331,223 @@
             }
         }
 
-        ```                        
+        ```
+1. 线程封闭
+    - ThreadLocal
+        - SpringBoot中过滤器、拦截器的编写。
+    1. ad-hoc封闭：程序控制实现，不推荐
+    1. 堆栈封闭：局部变量，无并发问题
+        > <a href="https://github.com/GaoYong0520/inside-jvm/blob/master/jvm/Notes/JVM%E5%86%85%E5%AD%98%E5%88%92%E5%88%86.md">参考Java内存模型 </a>
+    1. **ThreadLocal线程封闭**
+        - 深入学习
+1. 线程不安全类与写法
+    - StringBuilder vs StringBuffer
+        - StringBuilder
+            - 线程不安全
+        - StringBuffer
+            - 使用synchronized修饰，线程安全，但是性能消耗较高
+    - DateFormat
+    - HashMap，HashSet，ArrayList等Collection类
+    - 先检查再执行
+        - 存在非原子操作，容易导致线程不安全发生
+        
+## 线程安全——同步容器
+1. Vector, Stack
+    ```java
+    @ThreadSafe
+    public class VectorExample1 {
+    
+        // 请求总数
+        public static int clientTotal = 5000;
+    
+        // 同时并发执行的线程数
+        public static int threadTotal = 200;
+    
+        private static List<Integer> list = new Vector<>();
+    
+        public static void main(String[] args) throws Exception {
+            ExecutorService executorService = Executors.newCachedThreadPool();
+            final Semaphore semaphore = new Semaphore(threadTotal);
+            final CountDownLatch countDownLatch = new CountDownLatch(clientTotal);
+            for (int i = 0; i < clientTotal; i++) {
+                final int count = i;
+                executorService.execute(() -> {
+                    try {
+                        semaphore.acquire();
+                        update(count);
+                        semaphore.release();
+                    } catch (Exception e) {
+                        log.error("exception", e);
+                    }
+                    countDownLatch.countDown();
+                });
+            }
+            countDownLatch.await();
+            executorService.shutdown();
+            log.info("size:{}", list.size());
+        }
+    
+        private static void update(int i) {
+            list.add(i);
+        }
+    }
+    //线程不安全
+    @NotThreadSafe
+    public class VectorExample2 {
+    
+        private static Vector<Integer> vector = new Vector<>();
+    
+        public static void main(String[] args) {
+    
+            while (true) {
+    
+                for (int i = 0; i < 10; i++) {
+                    vector.add(i);
+                }
+    
+                Thread thread1 = new Thread() {
+                    public void run() {
+                        for (int i = 0; i < vector.size(); i++) {
+                            vector.remove(i);
+                        }
+                    }
+                };
+    
+                Thread thread2 = new Thread() {
+                    public void run() {
+                        for (int i = 0; i < vector.size(); i++) {
+                            vector.get(i);
+                        }
+                    }
+                };
+                thread1.start();
+                thread2.start();
+            }
+        }
+    }
+ 
+    // 在遍历过程中不要对容器内容进行修改
+    public class VectorExample3 {
+    
+        // java.util.ConcurrentModificationException
+        private static void test1(Vector<Integer> v1) { // foreach
+            for(Integer i : v1) {
+                if (i.equals(3)) {
+                    v1.remove(i);
+                }
+            }
+        }
+    
+        // java.util.ConcurrentModificationException
+        private static void test2(Vector<Integer> v1) { // iterator
+            Iterator<Integer> iterator = v1.iterator();
+            while (iterator.hasNext()) {
+                Integer i = iterator.next();
+                if (i.equals(3)) {
+                    v1.remove(i);
+                }
+            }
+        }
+    
+        // success
+        private static void test3(Vector<Integer> v1) { // for
+            for (int i = 0; i < v1.size(); i++) {
+                if (v1.get(i).equals(3)) {
+                    v1.remove(i);
+                }
+            }
+        }
+    
+        public static void main(String[] args) {
+    
+            Vector<Integer> vector = new Vector<>();
+            vector.add(1);
+            vector.add(2);
+            vector.add(3);
+            test1(vector);
+        }
+    }
+    ```
+1. HashTable(key, value不能为null)
+    ```java
+    @ThreadSafe
+    public class HashTableExample {
+    
+        // 请求总数
+        public static int clientTotal = 5000;
+    
+        // 同时并发执行的线程数
+        public static int threadTotal = 200;
+    
+        private static Map<Integer, Integer> map = new Hashtable<>();
+    
+        public static void main(String[] args) throws Exception {
+            ExecutorService executorService = Executors.newCachedThreadPool();
+            final Semaphore semaphore = new Semaphore(threadTotal);
+            final CountDownLatch countDownLatch = new CountDownLatch(clientTotal);
+            for (int i = 0; i < clientTotal; i++) {
+                final int count = i;
+                executorService.execute(() -> {
+                    try {
+                        semaphore.acquire();
+                        update(count);
+                        semaphore.release();
+                    } catch (Exception e) {
+                        log.error("exception", e);
+                    }
+                    countDownLatch.countDown();
+                });
+            }
+            countDownLatch.await();
+            executorService.shutdown();
+            log.info("size:{}", map.size());
+        }
+    
+        private static void update(int i) {
+            map.put(i, i);
+        }
+    }
+    ```
+1. Collections.synchronizedXXX(List, Set, Map)
+    ```java
+    @ThreadSafe
+    public class CollectionsExample1 {
+    
+        // 请求总数
+        public static int clientTotal = 5000;
+    
+        // 同时并发执行的线程数
+        public static int threadTotal = 200;
+    
+        private static List<Integer> list = Collections.synchronizedList(Lists.newArrayList());
+    
+        public static void main(String[] args) throws Exception {
+            ExecutorService executorService = Executors.newCachedThreadPool();
+            final Semaphore semaphore = new Semaphore(threadTotal);
+            final CountDownLatch countDownLatch = new CountDownLatch(clientTotal);
+            for (int i = 0; i < clientTotal; i++) {
+                final int count = i;
+                executorService.execute(() -> {
+                    try {
+                        semaphore.acquire();
+                        update(count);
+                        semaphore.release();
+                    } catch (Exception e) {
+                        log.error("exception", e);
+                    }
+                    countDownLatch.countDown();
+                });
+            }
+            countDownLatch.await();
+            executorService.shutdown();
+            log.info("size:{}", list.size());
+        }
+    
+        private static void update(int i) {
+            list.add(i);
+        }
+    }
+    ```
+           
+        
+                             
