@@ -7,3 +7,4 @@ gen
 .mvn
 mvnw
 mvnw.cmd
+/target
