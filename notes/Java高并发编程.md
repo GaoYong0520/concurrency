@@ -548,6 +548,104 @@
         }
     }
     ```
+
+## 并发容器J.U.C
+
+1. ArrayList -> CopyOnWriteArrayList
+    - 实时性不好，对性能开销较大
+    - 适合读多写少的操作
+    - 线程安全
+    - 读写分离
+        - 读不加锁，写加锁
+    ```java
+    @ThreadSafe
+    public class CopyOnWriteArrayListExample {
+    
+        // 请求总数
+        public static int clientTotal = 5000;
+    
+        // 同时并发执行的线程数
+        public static int threadTotal = 200;
+    
+        private static List<Integer> list = new CopyOnWriteArrayList<>();
+    
+        public static void main(String[] args) throws Exception {
+            ExecutorService executorService = Executors.newCachedThreadPool();
+            final Semaphore semaphore = new Semaphore(threadTotal);
+            final CountDownLatch countDownLatch = new CountDownLatch(clientTotal);
+            for (int i = 0; i < clientTotal; i++) {
+                final int count = i;
+                executorService.execute(() -> {
+                    try {
+                        semaphore.acquire();
+                        update(count);
+                        semaphore.release();
+                    } catch (Exception e) {
+                        log.error("exception", e);
+                    }
+                    countDownLatch.countDown();
+                });
+            }
+            countDownLatch.await();
+            executorService.shutdown();
+            log.info("size:{}", list.size());
+        }
+    
+        private static void update(int i) {
+            list.add(i);
+        }
+    }
+    ``` 
+1. HashSet, TreeSet => CopyOnWriteArraySet, ConcurrentSkipListSet
+1. HashMap, TreeMap => **ConcurrentHashMap, ConcurrentSkipListMap**
+    - 面试
+    
+    
+## AQS
+
+1. 基础概念
+    - 使用双向链表，使用Node实现FIFO队列
+    - ......
+1. CountDownLatch
+    ```java
+    public class CountDownLatchExample1 {
+    
+        private final static int threadCount = 200;
+    
+        public static void main(String[] args) throws Exception {
+    
+            ExecutorService exec = Executors.newCachedThreadPool();
+    
+            final CountDownLatch countDownLatch = new CountDownLatch(threadCount);
+    
+            for (int i = 0; i < threadCount; i++) {
+                final int threadNum = i;
+                exec.execute(() -> {
+                    try {
+                        test(threadNum);
+                    } catch (Exception e) {
+                        log.error("exception", e);
+                    } finally { //注意异常情况
+                        countDownLatch.countDown();
+                    }
+                });
+            }
+            //保证之前的线程全部执行完毕
+            //计数器+等待时间
+            countDownLatch.await();
+            log.info("finish");
+            //关闭线程池， 线程执行完毕后释放资源
+            exec.shutdown();
+        }
+    
+        private static void test(int threadNum) throws Exception {
+            Thread.sleep(100);
+            log.info("{}", threadNum);
+            Thread.sleep(100);
+        }
+    }
+    ```    
+
            
         
                              
