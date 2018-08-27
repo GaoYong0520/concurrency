@@ -644,8 +644,177 @@
             Thread.sleep(100);
         }
     }
-    ```    
-
-           
+    ```
+1. Semaphore(信号量)
+    > 参考操作系统信号量概念
+    ```java
+    public class SemaphoreExample1 {
+    
+        private final static int threadCount = 20;
+    
+        public static void main(String[] args) throws Exception {
+    
+            ExecutorService exec = Executors.newCachedThreadPool();
+    
+            // 3——允许的并发数
+            final Semaphore semaphore = new Semaphore(3);
+    
+            for (int i = 0; i < threadCount; i++) {
+                final int threadNum = i;
+                exec.execute(() -> {
+                    try {
+                        semaphore.acquire(); // 获取一个许可，也可以获取多个许可
+                        test(threadNum);
+                        semaphore.release(); // 释放一个许可，也可以释放多个许可
+                    } catch (Exception e) {
+                        log.error("exception", e);
+                    }
+                });
+            }
+            exec.shutdown();
+        }
+    
+        private static void test(int threadNum) throws Exception {
+            log.info("{}", threadNum);
+            Thread.sleep(1000);
+        }
+    }
+ 
+    public class SemaphoreExample4 {
+    
+        private final static int threadCount = 20;
+    
+        public static void main(String[] args) throws Exception {
+    
+            ExecutorService exec = Executors.newCachedThreadPool();
+    
+            final Semaphore semaphore = new Semaphore(5);
+    
+            for (int i = 0; i < threadCount; i++) {
+                final int threadNum = i;
+                exec.execute(() -> {
+                    try {
+                        if (semaphore.tryAcquire(5000, TimeUnit.MILLISECONDS)) { // 尝试获取一个许可
+                            test(threadNum);
+                            semaphore.release(); // 释放一个许可
+                        }
+                    } catch (Exception e) {
+                        log.error("exception", e);
+                    }
+                });
+            }
+            exec.shutdown();
+        }
+    
+        private static void test(int threadNum) throws Exception {
+            log.info("{}", threadNum);
+            Thread.sleep(1000);
+        }
+    }
+    ``` 
+1.  CyclicBarrier
+    - 原理图
+        ![CyclicBarrier](./img/CyclicBarrier.png)
+    - 计数器
+    - 对比CountDownLatch
+    - 用途：多个线程之间相互等待
+    ```java
+    public class CyclicBarrierExample2 {
+    
+        private static CyclicBarrier barrier = new CyclicBarrier(5);
+    
+        public static void main(String[] args) throws Exception {
+    
+            ExecutorService executor = Executors.newCachedThreadPool();
+    
+            for (int i = 0; i < 10; i++) {
+                final int threadNum = i;
+                Thread.sleep(1000);
+                executor.execute(() -> {
+                    try {
+                        race(threadNum);
+                    } catch (Exception e) {
+                        log.error("exception", e);
+                    }
+                });
+            }
+            executor.shutdown();
+        }
+    
+        private static void race(int threadNum) throws Exception {
+            Thread.sleep(1000);
+            log.info("{} is ready", threadNum);
+            try {
+                // 等待超时后，发生异常，根据需要捕捉异常
+                barrier.await(2000, TimeUnit.MILLISECONDS);
+            } catch (Exception e) {
+                log.warn("BarrierException", e);
+            }
+            log.info("{} continue", threadNum);
+        }
+    }
+    ```      
+1. ReentrantLock(可重入锁)与锁
+    - 基本概念
+        - Java锁
+            1. synchronized——JVM实现
+                - ***synchronized自旋锁***
+            1. ReentrantLock——JDK实现
+            1. 对比：
+                - 可重入锁
+                - 实现
+                - 性能
+            1. 功能
+                - ReentrantLock独有功能
+                
+                    > 尽量减少线程进入内核态，使操作在用户态完成
+                    - 可指定公平锁或非公平锁
+                    - 提供Condition类，分组唤醒需要唤醒的锁
+                    - 提供能够中断等待锁的线程的机制                   
+    
+    ```java
+    public class LockExample2 {
+    
+        // 请求总数
+        public static int clientTotal = 5000;
+    
+        // 同时并发执行的线程数
+        public static int threadTotal = 200;
+    
+        public static int count = 0;
+    
+        private final static Lock lock = new ReentrantLock();
+    
+        public static void main(String[] args) throws Exception {
+            ExecutorService executorService = Executors.newCachedThreadPool();
+            final Semaphore semaphore = new Semaphore(threadTotal);
+            final CountDownLatch countDownLatch = new CountDownLatch(clientTotal);
+            for (int i = 0; i < clientTotal ; i++) {
+                executorService.execute(() -> {
+                    try {
+                        semaphore.acquire();
+                        add();
+                        semaphore.release();
+                    } catch (Exception e) {
+                        log.error("exception", e);
+                    }
+                    countDownLatch.countDown();
+                });
+            }
+            countDownLatch.await();
+            executorService.shutdown();
+            log.info("count:{}", count);
+        }
+    
+        private static void add() {
+            lock.lock();
+            try {
+                count++;
+            } finally { //在finally块中释放锁
+                lock.unlock();
+            }
+        }
+    }
+    ```       
         
                              
