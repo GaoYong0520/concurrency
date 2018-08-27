@@ -714,10 +714,13 @@
     ``` 
 1.  CyclicBarrier
     - 原理图
+        
         ![CyclicBarrier](./img/CyclicBarrier.png)
+        
     - 计数器
     - 对比CountDownLatch
     - 用途：多个线程之间相互等待
+    
     ```java
     public class CyclicBarrierExample2 {
     
