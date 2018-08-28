@@ -18,7 +18,7 @@
                 - 修饰静态方法
                 - 修饰类
             - lock，**依赖于特殊的CPU指令**
-                - 可中断锁，适合竞争激烈情况下使用        
+                - 可中断锁，适合竞争激烈情况下使用
     2. 可见性
         > 参考inside-jvm
         - 线程安全性
@@ -29,7 +29,7 @@
             - 插入指令屏障，禁用指令重排序
             - 非原子操作，不能保证线程安全性
             - 应用示例
-            
+
                 ![volatile](./img/volatile.png)
 
     3. 有序性
@@ -46,24 +46,24 @@
             - 线程中断规则
             - 线程终结规则
             - 对象终结规则
-                
+
 2. 安全发布对象
     1. 发布对象
         ```java
            @Slf4j
                    @NotThreadSafe
                    public class UnsafePublish {
-                   
+
                        private String[] states = {"a", "b", "c"};
-                   
+
                        public String[] getStates() {
                            return states;
                        }
-                   
+
                        public static void main(String[] args) {
                            UnsafePublish unsafePublish = new UnsafePublish();
                            log.info("{}", Arrays.toString(unsafePublish.getStates()));
-                   
+
                            // 对私有属性进行修改，线程不安全
                            unsafePublish.getStates()[0] = "d";
                            log.info("{}", Arrays.toString(unsafePublish.getStates()));
@@ -79,26 +79,26 @@
            @NotThreadSafe
            @NotRecommend
            public class Escape {
-           
+
                private int thisCanBeEscape = 0;
-           
+
                public Escape () {
                    new InnerClass();
                }
-           
+
                private class InnerClass {
-           
+
                    public InnerClass() {
                        log.info("{}", Escape.this.thisCanBeEscape);
                    }
                }
-           
+
                public static void main(String[] args) {
                    new Escape();
                }
            }
         ```
-    1. 安全发布对象        
+    1. 安全发布对象
         1. 令在静态初始化函数中初始化一个对象引用
         1. 令将对象的引用保存到volatile类型域或者AtomicReference对象中
         1. 令将对象的引用保存到某个正确构造对象的fina|类型域中
@@ -123,28 +123,28 @@
                     return instance;
                 }
             }
- 
+
             /**
              * 饿汉模式
              * 单例实例在类装载时进行创建
              */
             @ThreadSafe
             public class SingletonExample2 {
-            
+
                 // 私有构造函数
                 private SingletonExample2() {
-            
+
                 }
-            
+
                 // 单例对象
                 private static SingletonExample2 instance = new SingletonExample2();
-            
+
                 // 静态的工厂方法
                 public static SingletonExample2 getInstance() {
                     return instance;
                 }
             }
- 
+
             /**
              * 懒汉模式
              * 单例实例在第一次使用时进行创建
@@ -152,15 +152,15 @@
             @ThreadSafe
             @NotRecommend
             public class SingletonExample3 {
-            
+
                 // 私有构造函数
                 private SingletonExample3() {
-            
+
                 }
-            
+
                 // 单例对象
                 private static SingletonExample3 instance = null;
-            
+
                 // 静态的工厂方法
                 // synchronized 性能开销较大
                 public static synchronized SingletonExample3 getInstance() {
@@ -170,7 +170,7 @@
                     return instance;
                 }
             }
- 
+
             /**
              * 懒汉模式 -》 双重同步锁单例模式
              * 单例实例在第一次使用时进行创建
@@ -178,25 +178,25 @@
              */
             @NotThreadSafe
             public class SingletonExample4 {
-            
+
                 // 私有构造函数
                 private SingletonExample4() {
-            
+
                 }
-            
+
                 // 1、memory = allocate() 分配对象的内存空间
                 // 2、ctorInstance() 初始化对象
                 // 3、instance = memory 设置instance指向刚分配的内存
-            
+
                 // JVM和cpu优化，发生了指令重排
-            
+
                 // 1、memory = allocate() 分配对象的内存空间
                 // 3、instance = memory 设置instance指向刚分配的内存
                 // 2、ctorInstance() 初始化对象
-            
+
                 // 单例对象
                 private static SingletonExample4 instance = null;
-            
+
                 // 静态的工厂方法
                 // 单例对象 volatile + 双重检测机制 -> 禁止指令重排
                 public volatile static SingletonExample4 getInstance() {
@@ -210,64 +210,64 @@
                     return instance;
                 }
             }
-            
+
             /**
              * 饿汉模式
              * 单例实例在类装载时进行创建
              */
             @ThreadSafe
             public class SingletonExample6 {
-            
+
                 // 私有构造函数
                 private SingletonExample6() {
-            
+
                 }
-            
+
                 // 单例对象
                 private static SingletonExample6 instance = null;
-            
+
                 // 注意静态块的顺序
                 static {
                     instance = new SingletonExample6();
                 }
-            
+
                 // 静态的工厂方法
                 public static SingletonExample6 getInstance() {
                     return instance;
                 }
-            
+
                 public static void main(String[] args) {
                     System.out.println(getInstance().hashCode());
                     System.out.println(getInstance().hashCode());
                 }
             }
- 
+
             /**
              * 枚举模式：最安全
              */
             @ThreadSafe
             @Recommend
             public class SingletonExample7 {
-            
+
                 // 私有构造函数
                 private SingletonExample7() {
-            
+
                 }
-            
+
                 public static SingletonExample7 getInstance() {
                     return Singleton.INSTANCE.getInstance();
                 }
-            
+
                 private enum Singleton {
                     INSTANCE;
-            
+
                     private SingletonExample7 singleton;
-            
+
                     // JVM保证这个方法绝对只调用一次
                     Singleton() {
                         singleton = new SingletonExample7();
                     }
-            
+
                     public SingletonExample7 getInstance() {
                         return singleton;
                     }
@@ -287,45 +287,45 @@
         @Slf4j
         @ThreadSafe
         public class ImmutableExample2 {
-        
+
             private static Map<Integer, Integer> map = Maps.newHashMap();
-        
+
             static {
                 map.put(1, 2);
                 map.put(3, 4);
                 map.put(5, 6);
                 map = Collections.unmodifiableMap(map);
             }
-        
+
             public static void main(String[] args) {
                 map.put(1, 3);
                 log.info("{}", map.get(1));
             }
-        
+
         }
         ```
     1. Guava
         ```java
         package com.mmall.concurrency.example.immutable;
-        
+
         import com.google.common.collect.ImmutableList;
         import com.google.common.collect.ImmutableMap;
         import com.google.common.collect.ImmutableSet;
         import com.mmall.concurrency.annoations.ThreadSafe;
-        
+
         @ThreadSafe
         public class ImmutableExample3 {
-        
+
             private final static ImmutableList<Integer> list = ImmutableList.of(1, 2, 3);
-        
+
             private final static ImmutableSet set = ImmutableSet.copyOf(list);
-        
+
             private final static ImmutableMap<Integer, Integer> map = ImmutableMap.of(1, 2, 3, 4);
-        
+
             private final static ImmutableMap<Integer, Integer> map2 = ImmutableMap.<Integer, Integer>builder()
                     .put(1, 2).put(3, 4).put(5, 6).build();
-        
-        
+
+
             public static void main(String[] args) {
                 System.out.println(map2.get(3));
             }
@@ -350,21 +350,21 @@
     - HashMap，HashSet，ArrayList等Collection类
     - 先检查再执行
         - 存在非原子操作，容易导致线程不安全发生
-        
+
 ## 线程安全——同步容器
 1. Vector, Stack
     ```java
     @ThreadSafe
     public class VectorExample1 {
-    
+
         // 请求总数
         public static int clientTotal = 5000;
-    
+
         // 同时并发执行的线程数
         public static int threadTotal = 200;
-    
+
         private static List<Integer> list = new Vector<>();
-    
+
         public static void main(String[] args) throws Exception {
             ExecutorService executorService = Executors.newCachedThreadPool();
             final Semaphore semaphore = new Semaphore(threadTotal);
@@ -386,7 +386,7 @@
             executorService.shutdown();
             log.info("size:{}", list.size());
         }
-    
+
         private static void update(int i) {
             list.add(i);
         }
@@ -394,17 +394,17 @@
     //线程不安全
     @NotThreadSafe
     public class VectorExample2 {
-    
+
         private static Vector<Integer> vector = new Vector<>();
-    
+
         public static void main(String[] args) {
-    
+
             while (true) {
-    
+
                 for (int i = 0; i < 10; i++) {
                     vector.add(i);
                 }
-    
+
                 Thread thread1 = new Thread() {
                     public void run() {
                         for (int i = 0; i < vector.size(); i++) {
@@ -412,7 +412,7 @@
                         }
                     }
                 };
-    
+
                 Thread thread2 = new Thread() {
                     public void run() {
                         for (int i = 0; i < vector.size(); i++) {
@@ -425,10 +425,10 @@
             }
         }
     }
- 
+
     // 在遍历过程中不要对容器内容进行修改
     public class VectorExample3 {
-    
+
         // java.util.ConcurrentModificationException
         private static void test1(Vector<Integer> v1) { // foreach
             for(Integer i : v1) {
@@ -437,7 +437,7 @@
                 }
             }
         }
-    
+
         // java.util.ConcurrentModificationException
         private static void test2(Vector<Integer> v1) { // iterator
             Iterator<Integer> iterator = v1.iterator();
@@ -448,7 +448,7 @@
                 }
             }
         }
-    
+
         // success
         private static void test3(Vector<Integer> v1) { // for
             for (int i = 0; i < v1.size(); i++) {
@@ -457,9 +457,9 @@
                 }
             }
         }
-    
+
         public static void main(String[] args) {
-    
+
             Vector<Integer> vector = new Vector<>();
             vector.add(1);
             vector.add(2);
@@ -472,15 +472,15 @@
     ```java
     @ThreadSafe
     public class HashTableExample {
-    
+
         // 请求总数
         public static int clientTotal = 5000;
-    
+
         // 同时并发执行的线程数
         public static int threadTotal = 200;
-    
+
         private static Map<Integer, Integer> map = new Hashtable<>();
-    
+
         public static void main(String[] args) throws Exception {
             ExecutorService executorService = Executors.newCachedThreadPool();
             final Semaphore semaphore = new Semaphore(threadTotal);
@@ -502,7 +502,7 @@
             executorService.shutdown();
             log.info("size:{}", map.size());
         }
-    
+
         private static void update(int i) {
             map.put(i, i);
         }
@@ -512,15 +512,15 @@
     ```java
     @ThreadSafe
     public class CollectionsExample1 {
-    
+
         // 请求总数
         public static int clientTotal = 5000;
-    
+
         // 同时并发执行的线程数
         public static int threadTotal = 200;
-    
+
         private static List<Integer> list = Collections.synchronizedList(Lists.newArrayList());
-    
+
         public static void main(String[] args) throws Exception {
             ExecutorService executorService = Executors.newCachedThreadPool();
             final Semaphore semaphore = new Semaphore(threadTotal);
@@ -542,7 +542,7 @@
             executorService.shutdown();
             log.info("size:{}", list.size());
         }
-    
+
         private static void update(int i) {
             list.add(i);
         }
@@ -560,15 +560,15 @@
     ```java
     @ThreadSafe
     public class CopyOnWriteArrayListExample {
-    
+
         // 请求总数
         public static int clientTotal = 5000;
-    
+
         // 同时并发执行的线程数
         public static int threadTotal = 200;
-    
+
         private static List<Integer> list = new CopyOnWriteArrayList<>();
-    
+
         public static void main(String[] args) throws Exception {
             ExecutorService executorService = Executors.newCachedThreadPool();
             final Semaphore semaphore = new Semaphore(threadTotal);
@@ -590,17 +590,17 @@
             executorService.shutdown();
             log.info("size:{}", list.size());
         }
-    
+
         private static void update(int i) {
             list.add(i);
         }
     }
-    ``` 
+    ```
 1. HashSet, TreeSet => CopyOnWriteArraySet, ConcurrentSkipListSet
 1. HashMap, TreeMap => **ConcurrentHashMap, ConcurrentSkipListMap**
     - 面试
-    
-    
+
+
 ## AQS
 
 1. 基础概念
@@ -609,15 +609,15 @@
 1. CountDownLatch
     ```java
     public class CountDownLatchExample1 {
-    
+
         private final static int threadCount = 200;
-    
+
         public static void main(String[] args) throws Exception {
-    
+
             ExecutorService exec = Executors.newCachedThreadPool();
-    
+
             final CountDownLatch countDownLatch = new CountDownLatch(threadCount);
-    
+
             for (int i = 0; i < threadCount; i++) {
                 final int threadNum = i;
                 exec.execute(() -> {
@@ -637,7 +637,7 @@
             //关闭线程池， 线程执行完毕后释放资源
             exec.shutdown();
         }
-    
+
         private static void test(int threadNum) throws Exception {
             Thread.sleep(100);
             log.info("{}", threadNum);
@@ -649,16 +649,16 @@
     > 参考操作系统信号量概念
     ```java
     public class SemaphoreExample1 {
-    
+
         private final static int threadCount = 20;
-    
+
         public static void main(String[] args) throws Exception {
-    
+
             ExecutorService exec = Executors.newCachedThreadPool();
-    
+
             // 3——允许的并发数
             final Semaphore semaphore = new Semaphore(3);
-    
+
             for (int i = 0; i < threadCount; i++) {
                 final int threadNum = i;
                 exec.execute(() -> {
@@ -673,23 +673,23 @@
             }
             exec.shutdown();
         }
-    
+
         private static void test(int threadNum) throws Exception {
             log.info("{}", threadNum);
             Thread.sleep(1000);
         }
     }
- 
+
     public class SemaphoreExample4 {
-    
+
         private final static int threadCount = 20;
-    
+
         public static void main(String[] args) throws Exception {
-    
+
             ExecutorService exec = Executors.newCachedThreadPool();
-    
+
             final Semaphore semaphore = new Semaphore(5);
-    
+
             for (int i = 0; i < threadCount; i++) {
                 final int threadNum = i;
                 exec.execute(() -> {
@@ -705,31 +705,31 @@
             }
             exec.shutdown();
         }
-    
+
         private static void test(int threadNum) throws Exception {
             log.info("{}", threadNum);
             Thread.sleep(1000);
         }
     }
-    ``` 
+    ```
 1.  CyclicBarrier
     - 原理图
-        
+
         ![CyclicBarrier](./img/CyclicBarrier.png)
-        
+
     - 计数器
     - 对比CountDownLatch
     - 用途：多个线程之间相互等待
-    
+
     ```java
     public class CyclicBarrierExample2 {
-    
+
         private static CyclicBarrier barrier = new CyclicBarrier(5);
-    
+
         public static void main(String[] args) throws Exception {
-    
+
             ExecutorService executor = Executors.newCachedThreadPool();
-    
+
             for (int i = 0; i < 10; i++) {
                 final int threadNum = i;
                 Thread.sleep(1000);
@@ -743,7 +743,7 @@
             }
             executor.shutdown();
         }
-    
+
         private static void race(int threadNum) throws Exception {
             Thread.sleep(1000);
             log.info("{} is ready", threadNum);
@@ -756,7 +756,7 @@
             log.info("{} continue", threadNum);
         }
     }
-    ```      
+    ```
 1. ReentrantLock(可重入锁)与锁
     - 基本概念
         - Java锁
@@ -769,30 +769,30 @@
                 - 性能
             1. 功能
                 - ReentrantLock独有功能
-                
+
                     > 尽量减少线程进入内核态，使操作在用户态完成
                     - 可指定公平锁或非公平锁
                     - 提供Condition类，分组唤醒需要唤醒的锁
-                    - 提供能够中断等待锁的线程的机制                   
+                    - 提供能够中断等待锁的线程的机制
     1.  **ReentrantReadWriteLock**
-   
+
         > 在没有读锁和写锁时才能进行写入操作，使用悲观读取。**读多写少的时候可能会导致线程饥饿**
-    
+
     1.  **StampedLock**
-       
+
     ```java
     public class LockExample2 {
-    
+
         // 请求总数
         public static int clientTotal = 5000;
-    
+
         // 同时并发执行的线程数
         public static int threadTotal = 200;
-    
+
         public static int count = 0;
-    
+
         private final static Lock lock = new ReentrantLock();
-    
+
         public static void main(String[] args) throws Exception {
             ExecutorService executorService = Executors.newCachedThreadPool();
             final Semaphore semaphore = new Semaphore(threadTotal);
@@ -813,7 +813,7 @@
             executorService.shutdown();
             log.info("count:{}", count);
         }
-    
+
         private static void add() {
             lock.lock();
             try {
@@ -823,17 +823,17 @@
             }
         }
     }
- 
+
     public class LockExample3 {
-    
+
         private final Map<String, Data> map = new TreeMap<>();
         //在没有读锁和写锁时才能进行写入操作，使用悲观读取
         private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
-    
+
         private final Lock readLock = lock.readLock();
-    
+
         private final Lock writeLock = lock.writeLock();
-    
+
         public Data get(String key) {
             readLock.lock();
             try {
@@ -842,7 +842,7 @@
                 readLock.unlock();
             }
         }
-    
+
         public Set<String> getAllKeys() {
             readLock.lock();
             try {
@@ -851,7 +851,7 @@
                 readLock.unlock();
             }
         }
-    
+
         public Data put(String key, Data value) {
             writeLock.lock();
             try {
@@ -860,18 +860,18 @@
                 readLock.unlock();
             }
         }
-    
+
         class Data {
-    
+
         }
-        
+
         // StampedLock
         public class LockExample4 {
-        
+
             class Point {
                 private double x, y;
                 private final StampedLock sl = new StampedLock();
-        
+
                 void move(double deltaX, double deltaY) { // an exclusively locked method
                     long stamp = sl.writeLock();
                     try {
@@ -881,7 +881,7 @@
                         sl.unlockWrite(stamp);
                     }
                 }
-        
+
                 //下面看看乐观读锁案例
                 double distanceFromOrigin() { // A read-only method
                     long stamp = sl.tryOptimisticRead(); //获得一个乐观读锁
@@ -897,7 +897,7 @@
                     }
                     return Math.sqrt(currentX * currentX + currentY * currentY);
                 }
-        
+
                 //下面是悲观读锁案例
                 void moveIfAtOrigin(double newX, double newY) { // upgrade
                     // Could instead start with optimistic, not read mode
@@ -921,19 +921,19 @@
                 }
             }
         }
-     
+
         public class LockExample5 {
-        
+
             // 请求总数
             public static int clientTotal = 5000;
-        
+
             // 同时并发执行的线程数
             public static int threadTotal = 200;
-        
+
             public static int count = 0;
-        
+
             private final static StampedLock lock = new StampedLock();
-        
+
             public static void main(String[] args) throws Exception {
                 ExecutorService executorService = Executors.newCachedThreadPool();
                 final Semaphore semaphore = new Semaphore(threadTotal);
@@ -954,7 +954,7 @@
                 executorService.shutdown();
                 log.info("count:{}", count);
             }
-        
+
             private static void add() {
                 long stamp = lock.writeLock();
                 try {
@@ -965,6 +965,5 @@
             }
         }
         // 根据具体应用场景选择合适的锁
-    ```       
-    > 根据具体应用场景选择合适的锁    
-                             
+    ```
+    > 根据具体应用场景选择合适的锁
