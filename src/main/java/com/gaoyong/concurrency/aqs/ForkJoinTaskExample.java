@@ -1,7 +1,9 @@
 package com.gaoyong.concurrency.aqs;
 
 import lombok.extern.slf4j.Slf4j;
+import org.junit.Test;
 
+import java.util.Date;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
 import java.util.concurrent.RecursiveTask;
@@ -49,6 +51,7 @@ public class ForkJoinTaskExample extends RecursiveTask<Integer> {
     }
 
     public static void main(String[] args) {
+        System.out.println(new Date().toString());
         ForkJoinPool forkjoinPool = new ForkJoinPool();
 
         //生成一个计算任务，计算1+2+3+4
@@ -62,5 +65,6 @@ public class ForkJoinTaskExample extends RecursiveTask<Integer> {
         } catch (Exception e) {
             log.error("exception", e);
         }
+        System.out.println(new Date().toString());
     }
 }
